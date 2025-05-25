@@ -42,7 +42,9 @@ class Order(HashModel):
 @app.get('/orders/{pk}')
 def get(pk: str):
     try:
-        return Order.get(pk)
+        order = Order.get(pk)
+        redis.xadd('refund_order', order.model_dump(), '*')
+        return order
     except NotFoundError:
         raise HTTPException(status_code=404, detail=f"Order with ID {pk} not found")
 

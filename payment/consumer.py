@@ -1,8 +1,8 @@
-from main import redis, Product
+from main import redis, Order
 import time
 
-key = 'order_completed'
-group = 'inventory_group'
+key = 'refund_order'
+group = 'payment-group'
 
 # Wait for 5 seconds to ensure stream exists
 print("Waiting for services to start...")
@@ -20,15 +20,12 @@ while True:
         
 
         if results!=[]:
+            print(results)
             for result in results:
                 obj = result[1][0][1]
-                product = Product.get(obj['product_id'])
-                if product:
-                    print(product)
-                    product.quantity = product.quantity - int(obj['quantity'])
-                    product.save()
-                else:
-                    redis.xadd('refund_order',obj,'*')
+                order = Order.get(obj['pk'])
+                order.status = 'refunded'
+                order.save()
 
     except Exception as e:
         print(str(e))
