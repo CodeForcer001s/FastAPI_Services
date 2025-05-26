@@ -53,8 +53,28 @@ def create(product: Product):
 @app.get("/products/{pk}")
 def get(pk: str):
     try:
-        return Product.get(pk)
+        print("\n=== Product Lookup ===")
+        all_products = Product.all_pks()
+        print(f"Available product IDs: {all_products}")
+        print(f"Requested product ID: {pk}")
+        
+        if pk not in all_products:
+            print(f"Product ID {pk} not found in available products")
+            raise Exception(f"Product ID {pk} not found")
+            
+        product = Product.get(pk)
+        response = {
+            "id": product.pk,
+            "name": product.name,
+            "price": product.price,
+            "quantity": product.quantity
+        }
+        print(f"Found product: {response}")
+        print("=== End Product Lookup ===\n")
+        return response
+        
     except Exception as e:
+        print(f"Error getting product: {str(e)}")
         return {"error": "Product not found", "details": str(e)}
 
 @app.delete("/products/{pk}")

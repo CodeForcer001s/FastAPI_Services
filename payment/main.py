@@ -50,21 +50,37 @@ def get(pk: str):
 
 @app.post('/orders')
 async def create(request: Request, background_tasks: BackgroundTasks):
-    body = await request.json()
-    req = requests.get('http://localhost:8000/products/%s' % body['id'])
-    product = req.json()
-    order = Order(
-        product_id=body['id'],
-        price=product['price'],
-        fee=0.2*product['price'],
-        total=1.2*product['price'],
-        quantity=body['quantity'],
-        status='pending'
-    )
-    order.save()
-    print(f"Order created at: {time.strftime('%H:%M:%S')}")
-    background_tasks.add_task(order_completed, order)
-    return order
+    try:
+        body = await request.json()
+        print(f"Payment Service - Request body: {body}")
+        
+        # Add error handling for the request
+        req = requests.get(f'http://localhost:8000/products/{body["id"]}')
+        print(f"Payment Service - Response status: {req.status_code}")
+        product = req.json()
+        print(f"Payment Service - Product received: {product}")
+        
+        if "error" in product:
+            print(f"Payment Service - Product not found: {product['error']}")
+            return {"status": "error", "message": f"Product not found: {product['error']}"}
+        
+        order = Order(
+            product_id=body['id'],
+            price=product['price'],
+            fee=0.2*product['price'],
+            total=1.2*product['price'],
+            quantity=body['quantity'],
+            status='pending'
+        )
+        order.save()
+        background_tasks.add_task(order_completed, order)
+        return order
+    except KeyError as e:
+        print(f"Payment Service - KeyError: Missing field {str(e)}")
+        return {"status": "error", "message": f"Missing required field: {str(e)}"}
+    except Exception as e:
+        print(f"Payment Service - Error: {str(e)}")
+        return {"status": "error", "message": "An error occurred processing the order"}
 
 def order_completed(order: Order):
     try:
