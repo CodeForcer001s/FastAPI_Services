@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  inventory:
+    build: ./inventory
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./inventory:/app
+    environment:
+      - REDIS_HOST=redis-13134.crce182.ap-south-1-1.ec2.redns.redis-cloud.com
+      - REDIS_PORT=13134
+      - REDIS_PASSWORD=MrzOT9yiMmg9hrriKN31BlpDJNpgEZC3
+
+  payment:
+    build: ./payment
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./payment:/app
+    depends_on:
+      - inventory
+    environment:
+      - INVENTORY_URL=http://inventory:8000
+      - REDIS_HOST=redis-13134.crce182.ap-south-1-1.ec2.redns.redis-cloud.com
+      - REDIS_PORT=13134
+      - REDIS_PASSWORD=MrzOT9yiMmg9hrriKN31BlpDJNpgEZC3
+
+  frontend:
+    build: ./inventory-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./inventory-frontend:/app
+    depends_on:
+      - inventory
+      - payment
